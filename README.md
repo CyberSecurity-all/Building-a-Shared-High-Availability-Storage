@@ -38,26 +38,26 @@ Subsystem: Mellanox Technologies Mellanox Technologies ConnectX-3 Pro Stand-up d
 Kernel driver in use: mlx4_core
 Kernel modules: mlx4_core  
 ```
-1.2.2. Checking the functionality. (Installing drivers and settings are discussed separately at the link:
+#### 1.2.2. Checking the functionality. (Installing drivers and settings are discussed separately at the link:
 
-Let's install the rping package on both nodes:
+**Let's install the rping package on both nodes:**  
+```
+apt install rdmacm-utils  
+```
+**On the server:**
 
-apt install rdmacm-utils
+**Node 1: pve1 (10.10.1.1):**  
+```
+root@pve1:~# rping -s -v  
+```
+**On the client:**  
 
-On the server:
-
-Node 1: pve1 (10.10.1.1):
-
-root@pve1:~# rping -s -v 
-
-On the client:
-
-Node 2: pve99 (10.10.1.2):
-
-[root@pve99 ~]$ rping -c -a 10.10.1.1 -v
-
-We will see something like this output:
-
+**Node 2: pve99 (10.10.1.2):**  
+```
+[root@pve99 ~]$ rping -c -a 10.10.1.1 -v  
+```
+**We will see something like this output:**  
+```
 ping data: rdma-ping-54436: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRST
 ping data: rdma-ping-54437: bcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU
 ping data: rdma-ping-54438: cdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
@@ -70,63 +70,63 @@ ping data: rdma-ping-54444: ijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[\
 ping data: rdma-ping-54445: jklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[\]
 ping data: rdma-ping-54446: klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^
 ^C
-[root@pve99 ~]$
+[root@pve99 ~]$  
+```
+**Everything is fine.** 
 
-Everything is fine.
-4.2.3. On both nodes we install:
-
+#### 4.2.3. On both nodes we install:  
+```
 apt install drbd-utils
-apt install build-essential flex bison libssl-dev libnl-3-dev libnl-genl-3-dev libxml2-dev xmlto xsltproc python3-pytest python3-sphinx python3-yaml python3-jinja2 dkms
-
-We definitely need to stop the service.
-
+apt install build-essential flex bison libssl-dev libnl-3-dev libnl-genl-3-dev libxml2-dev xmlto xsltproc python3-pytest python3-sphinx python3-yaml python3-jinja2 dkms  
+```
+**We definitely need to stop the service.**  
+```
 systemctl list-units | grep drbd
-drbdadm down all
-
-Unloading modules is a must!!!:
-
+drbdadm down all  
+```
+**Unloading modules is a must!!!:**{: .notice--danger}  
+```
 lsmod | grep drbd
 systemctl stop drbd
-rmmod drbd
-
-Download the latest version:
-
-wget https://pkg.linbit.com//downloads/drbd/9/drbd-9.2.12.tar.gz
-
-Unpacking:
-
-tar xfz drbd-9.2.12.tar.gz
-
-We go into the directory and compile and install:
-
+rmmod drbd  
+```
+**Download the latest version:**  
+`
+wget https://pkg.linbit.com//downloads/drbd/9/drbd-9.2.12.tar.gz 
+`
+**Unpacking:**  
+```
+tar xfz drbd-9.2.12.tar.gz  
+```
+**We go into the directory and compile and install:**  
+```
 cd drbd-9.2.12
 make KVER=$(uname -r) all
-make install
+make install  
+```
+**Installing the module**  
 
-Installing the module
-
-Copy the compiled module to the appropriate kernel directory:
-
-
+**Copy the compiled module to the appropriate kernel directory:**  
+```
 cp  /lib/modules/$(uname -r)/updates/drbd..ko /lib/modules/$(uname -r)/kernel/drivers/block/
 cp  /lib/modules/$(uname -r)/updates/drbd_transport_rdma.ko /lib/modules/$(uname -r)/kernel/drivers/block/
 cp  /lib/modules/$(uname -r)/updates/drbd_transport_tcp.ko /lib/modules/$(uname -r)/kernel/drivers/block/
-cp  /lib/modules/$(uname -r)/updates/drbd_transport_lb-tcp.ko /lib/modules/$(uname -r)/kernel/drivers/block/
-
-Update the list of available modules:
-
-depmod -a
-
-Load modules manually:
-
+cp  /lib/modules/$(uname -r)/updates/drbd_transport_lb-tcp.ko /lib/modules/$(uname -r)/kernel/drivers/block/  
+```
+**Update the list of available modules:**  
+```
+depmod -a  
+```
+**Load modules manually:**  
+```
 modprobe drbd
 modprobe drbd_transport_rdma
 modprobe drbd_transport_lb-tcp
 modprobe drbd_transport_tcp
-modinfo drbd
-
-First node pve1:
-
+modinfo drbd  
+```
+**First node pve1:**  
+```
 root@pve1:~# cat /proc/drbd
 version: 9.2.12 (api:2/proto:118-122)
 GIT-hash: 2da6f528dc4ab3fd25c511f7b03531100e54ab08 build by root@pve1, 2024-12-17 19:11:24
@@ -159,8 +159,8 @@ parm:           protocol_version_min:
                 Supported: DRBD 8 [86-101]; DRBD 9 [118-122].
                 Default: 86 (drbd_protocol_version)
 parm:           strict_names:restrict resource and connection names to ascii alnum and a subset of punct (drbd_strict_names)
-root@pve1:~#
-
+root@pve1:~#  
+```
 Second node pve99:
 
 [root@pve99 ~]$ cat /proc/drbd

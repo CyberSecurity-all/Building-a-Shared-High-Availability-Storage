@@ -1,40 +1,43 @@
 # Building-a-Shared-High-Availability-Storage
-Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network
+**Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network**
 
- Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network.
-Live migration.
-1.1. Beginning. Due to the reduction in the price of network cards (I bought a pair of dual-port ones with a pair of copper cables for $100 with delivery), there was a desire to build a cluster of two nodes with two points of failure, connected directly by three wired networks and one WiFi, each having one nvme disk for shared storage. This was supposed to be a cluster option for a home or a small company. The choice fell on drbd storage from rdma.
-1.2. Implementation.
-1.2.1. Hardware. System. Configuration.
+## 1. Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network.
+*Live migration.*  
 
-Two nodes with Proxmox 8.3.2 installed:
+### 1.1. Beginning. Due to the reduction in the price of network cards (I bought a pair of dual-port ones with a pair of copper cables for $100 with delivery), there was a desire to build a cluster of two nodes with two points of failure, connected directly by three wired networks and one WiFi, each having one nvme disk for shared storage. This was supposed to be a cluster option for a home or a small company. The choice fell on drbd storage from rdma.  
 
+### 1.2. Implementation.  
+
+#### 1.2.1. Hardware. System. Configuration.  
+
+**Two nodes with Proxmox 8.3.2 installed:**
+```
 root@pve1:~# pveversion 
 pve-manager/8.3.2/3e76eec21c4a14a7 (running kernel: 6.8.12-5-pve)
 [root@pve99 ~]$ pveversion
 pve-manager/8.3.2/3e76eec21c4a14a7 (running kernel: 6.8.12-5-pve)
+```
 
 Mellanox Technologies ConnectX-3 Pro Stand-up dual-port 40GbE MCX314A-BCCT dual-port cards are connected directly via copper cables.
 
-Node pve1: 10.10.1.1 Part of the command output:
-
+**Node pve1: 10.10.1.1 Part of the command output:**  
+```
 lspci -vvv  
 01:00.0 Ethernet controller: Mellanox Technologies MT27520 Family [ConnectX-3 Pro]  
 Subsystem: Mellanox Technologies Mellanox Technologies ConnectX-3 Pro Stand-up dual-port 40GbE MCX314A-BCCT
 ...
 Kernel driver in use: mlx4_core
 Kernel modules: mlx4_core
-
-
-Node pve99: 10.10.1.2 Part of the command output:
-
+```
+**Node pve99: 10.10.1.2 Part of the command output:**  
+```
 lspci -vvv
 01:00.0 Ethernet controller: Mellanox Technologies MT27520 Family [ConnectX-3 Pro]
 Subsystem: Mellanox Technologies Mellanox Technologies ConnectX-3 Pro Stand-up dual-port 40GbE MCX314A-BCCT 
 ...
 Kernel driver in use: mlx4_core
-Kernel modules: mlx4_core
-
+Kernel modules: mlx4_core  
+```
 1.2.2. Checking the functionality. (Installing drivers and settings are discussed separately at the link:
 
 Let's install the rping package on both nodes:

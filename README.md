@@ -84,16 +84,16 @@ apt install build-essential flex bison libssl-dev libnl-3-dev libnl-genl-3-dev l
 systemctl list-units | grep drbd
 drbdadm down all  
 ```
-**Unloading modules is a must!!!:**{: .notice--danger}  
+**Unloading modules is a must!!!:**
 ```
 lsmod | grep drbd
 systemctl stop drbd
 rmmod drbd  
 ```
 **Download the latest version:**  
-`
+```
 wget https://pkg.linbit.com//downloads/drbd/9/drbd-9.2.12.tar.gz 
-`
+```  
 **Unpacking:**  
 ```
 tar xfz drbd-9.2.12.tar.gz  

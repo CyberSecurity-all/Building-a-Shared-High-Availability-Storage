@@ -1,4 +1,7 @@
 # Building-a-Shared-High-Availability-Storage
+
+![](build-drbd.png)
+
 **Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network**
 
 ## 1. Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network.

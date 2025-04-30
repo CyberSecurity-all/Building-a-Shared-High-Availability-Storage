@@ -513,38 +513,37 @@ root@ve99:~# pvcreate /dev/drbd{0,1}
 **and create volume groups on only one of the nodes:**  
 ```
 root@pve1:~# vgcreate vg_drbd0 /dev/drbd0
-
 Volume group "vg_drbd0" successfully created  
 root@pve1:~# vgcreate vg_drbd1 /dev/drbd1
-
 Volume group "vg_drbd1" successfully created    
 ```
-Now the groups can be seen on both nodes thanks to DRBD replication:
-
+**Now the groups can be seen on both nodes thanks to DRBD replication:**  
+```
 root@pve1:~# vgs
   VG       #PV #LV #SN Attr   VSize    VFree  
   os         1  17   0 wz--n- <465.76g  71.73g
   pve        1   8   0 wz--n-  231.88g  16.00g
   vg_drbd0   1   5   0 wz--n-  159.99g 106.99g
   vg_drbd1   1   2   0 wz--n-  159.99g 147.99g
-root@pve1:~#
-
-Second:
-
+root@pve1:~#  
+```
+**Second:**  
+```
 [root@pve99 ~]$ root@pve1:~pvs
   PV         VG       Fmt  Attr PSize   PFree  
   /dev/drbd0 vg_drbd0 lvm2 a--  159.99g 106.99g
   /dev/drbd1 vg_drbd1 lvm2 a--  159.99g 147.99g
   /dev/sda3  pve      lvm2 a--  <36.76g   4.50g
-[root@pve99 ~]$
+[root@pve99 ~]$  
+```
+### 1.3.6. Shared storage.  
 
-1.3.6. Shared storage.
+**We go to the PVE admin web console and add the LVM storage to Datacenter, select vg_drbd0 from the drop-down list and check the boxes for active and shared. In the Nodes drop-down list, we select both nodes pve1 and pve99 and click Add. Repeat the same for vg_drbd1.**  
 
-We go to the PVE admin web console and add the LVM storage to Datacenter, select vg_drbd0 from the drop-down list and check the boxes for active and shared. In the Nodes drop-down list, we select both nodes pve1 and pve99 and click Add. Repeat the same for vg_drbd1.
-1.3.7. Let's create a virtual machine with a disk on shared storage.
+### 1.3.7. Let's create a virtual machine with a disk on shared storage.  
 
-Let's run a test:
-
+**Let's run a test:**  
+```
 root@debvsan:/home/vov# fio --filename=/dev/sda1 --direct=1 --rw=read --bs=1m --size=20G --numjobs=200 --runtime=60 --group_reporting --name=file1 
 
 file1: (g=0): rw=read, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=psync, iodepth=1
@@ -578,10 +577,10 @@ Run status group 0 (all jobs):
 
 Disk stats (read/write):
   sda: ios=81909/617, merge=30/54, ticks=11925926/1508, in_queue=11927523, util=88.78%
-root@debvsan:/home/vov#
-
-Let's move a virtual machine disk from one storage to another.
-
+root@debvsan:/home/vov#  
+```
+**Let's move a virtual machine disk from one storage to another.**  
+```
 root@pve1:~# qm move-disk 105 scsi0 vg_drbd0 
 
 create full clone of drive scsi0 (vg_drbd1:vm-105-disk-0)
@@ -601,4 +600,5 @@ all 'mirror' jobs are ready
 drive-scsi0: Completing block job...
 drive-scsi0: Completed successfully.
 drive-scsi0: mirror-job finished
-root@pve1:~#
+root@pve1:~#  
+```

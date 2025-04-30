@@ -302,12 +302,12 @@ sector-size: 4096
 /dev/nvme0n1p6 : start=    63180800, size=    41943040, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=207CEE45-7593-6441-9FAF-99E294452177
 root@pve1:~#  
 ```
-Now, on another node, we will immediately save the layout to disk, and we will do the same when replacing a damaged disk:
-
-sfdisk /dev/nvme0n1 < nvmeKINGSTON512P6.dump
-
-Accordingly, we have:
-
+**Now, on another node, we will immediately save the layout to disk, and we will do the same when replacing a damaged disk:**  
+```
+sfdisk /dev/nvme0n1 < nvmeKINGSTON512P6.dump  
+```
+**Accordingly, we have:**  
+```
 [root@pve99 ~]$ fdisk -l /dev/nvme0n1
 Disk /dev/nvme0n1: 476.94 GiB, 512110190592 bytes, 125026902 sectors
 Disk model: KINGSTON SKC3000S512G                   
@@ -326,24 +326,24 @@ Device             Start       End  Sectors  Size Type
 /dev/nvme0n1p6  63180800 105123839 41943040  160G Linux filesystem
 
 Partition table entries are not in disk order.
-[root@pve99 ~]$
-
-We also see identical disk partition labels, which we will use later:
-
+[root@pve99 ~]$  
+```
+**We also see identical disk partition labels, which we will use later:**  
+```
 [root@pve99 ~]$ blkid /dev/nvme0n1p5
 /dev/nvme0n1p5: UUID="6b33cc5a02d7cc72" TYPE="drbd" PARTUUID="a00c2c46-01f3-1b48-9ab2-b458fdadc3d7"
 [root@pve99 ~]$ blkid /dev/nvme0n1p6
 /dev/nvme0n1p6: UUID="f0eb844c4d858ddc" TYPE="drbd" PARTUUID="207cee45-7593-6441-9faf-99e294452177"
-[root@pve99 ~]$
+[root@pve99 ~]$  
+```
+### 1.3.3. Setting up LVM filters. If you are going to use lvm for DRBD devices. THIS IS VERY IMPORTANT! In order for lvm to work on top of the drbd device and not touch the corresponding physical devices, you need to set up the /etc/lvm/lvm.conf file.  
 
-1.3.3. Setting up LVM filters. If you are going to use lvm for DRBD devices. THIS IS VERY IMPORTANT! In order for lvm to work on top of the drbd device and not touch the corresponding physical devices, you need to set up the /etc/lvm/lvm.conf file.
-
-Edit on both nodes:
-
-nano /etc/lvm/lvm.conf
-
-The type of part of a file, usually its end:
-
+**Edit on both nodes:**  
+```
+nano /etc/lvm/lvm.conf  
+```
+**The type of part of a file, usually its end:**  
+```
 devices {
      # added by pve-manager to avoid scanning ZFS zvols and Ceph rbds
      filter=["r|/dev/zd.*|","r|/dev/rbd.*|",
@@ -356,15 +356,16 @@ devices {
 "r|.*a00c2c46-01f3-1b48-9ab2-b458fdadc3d7.*|",
 "r|.*207cee45-7593-6441-9faf-99e294452177.*|",
 "a|/dev/drbd.*|"]
-}
+}  
+```
+*MANDATORY! To apply, you need to run the command on both nodes, after which a reboot is required: update-initramfs -u*  
 
-MANDATORY! To apply, you need to run the command on both nodes, after which a reboot is required: update-initramfs -u
-1.3.3. Create drbd devices: drbd0 from the physical device: nvme0n1p5 (or more precisely with PARTUUID="a00c2c46-01f3-1b48-9ab2-b458fdadc3d7"), drbd1 from the physical device: /dev/nv5 1-9faf-99e294452177"). Do this on both nodes (make files on one node and copy them to the other node).
-
-nano /etc/drbd.d/r0.res
-
-File type:
-
+### 1.3.3. Create drbd devices: drbd0 from the physical device: nvme0n1p5 (or more precisely with PARTUUID="a00c2c46-01f3-1b48-9ab2-b458fdadc3d7"), drbd1 from the physical device: /dev/nv5 1-9faf-99e294452177"). Do this on both nodes (make files on one node and copy them to the other node).  
+```
+nano /etc/drbd.d/r0.res  
+```
+**File type:**  
+```
 resource r0 {
     protocol  C;
 #    device    /dev/drbd0 minor 0;
@@ -408,14 +409,14 @@ resource r0 {
         rcvbuf-size 10M;
         allow-two-primaries;
     }
-}
-
-File for the second resource:
-
-nano /etc/drbd.d/r1.res
-
-File type:
-
+}  
+```
+**File for the second resource:**  
+```
+nano /etc/drbd.d/r1.res  
+```
+**File type:**  
+```
 resource r1 {
     protocol  C;
 #    device    /dev/drbd1 minor 1;
@@ -463,28 +464,28 @@ resource r1 {
         rcvbuf-size 10M;
         allow-two-primaries;
     }
-}
-
-1.3.4. We start the service and create resources, we do this on both nodes:
-
+}  
+```
+### 1.3.4. We start the service and create resources, we do this on both nodes:  
+```
  # systemctl enable --now drbd
 
 # systemctl restart drbd
 # drbdadm create-md r{0,1}
-# drbdadm up r{0,1}
+# drbdadm up r{0,1}  
+```
+**Then, on just one node, we set the resources to their initial state and run the initial sync:**  
+```
+root@pve1:~# drbdadm primary --force r{0,1}  
+```
+**Waiting for synchronization.**  
 
-Then, on just one node, we set the resources to their initial state and run the initial sync:
-
-root@pve1:~# drbdadm primary --force r{0,1}
-
-Waiting for synchronization.
-
-We do the same on the second node.
-
-root@pve99:~# drbdadm primary --force r{0,1}
-
-Let's check:
-
+**We do the same on the second node.**  
+```
+root@pve99:~# drbdadm primary --force r{0,1}  
+```
+**Let's check:**  
+```
 [root@pve99 ~]$ drbdadm status
 
 r0 role:Primary
@@ -497,25 +498,27 @@ r1 role:Primary
   pve1 role:Primary
     volume:1 peer-disk:UpToDate
 
-[root@pve99 ~]$
-
-1.3.5 Next we create physical LVM DRBD devices on both nodes:
-
+[root@pve99 ~]$  
+```
+### 1.3.5 Next we create physical LVM DRBD devices on both nodes:  
+```
 root@pve1:~# pvcreate /dev/drbd{0,1}
   Physical volume "/dev/drbd0" successfully created
   Physical volume "/dev/drbd1" successfully created
  
 root@ve99:~# pvcreate /dev/drbd{0,1}
   Physical volume "/dev/drbd0" successfully created
-  Physical volume "/dev/drbd1" successfully created
-
-і створіть групи томів лише на одному з вузлів:
+  Physical volume "/dev/drbd1" successfully created  
+```
+**and create volume groups on only one of the nodes:**  
+```
 root@pve1:~# vgcreate vg_drbd0 /dev/drbd0
-  Volume group "vg_drbd0" successfully created
- 
-root@pve1:~# vgcreate vg_drbd1 /dev/drbd1
-  Volume group "vg_drbd1" successfully created
 
+Volume group "vg_drbd0" successfully created  
+root@pve1:~# vgcreate vg_drbd1 /dev/drbd1
+
+Volume group "vg_drbd1" successfully created    
+```
 Now the groups can be seen on both nodes thanks to DRBD replication:
 
 root@pve1:~# vgs

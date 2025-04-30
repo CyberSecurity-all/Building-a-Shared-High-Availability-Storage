@@ -1,6 +1,10 @@
 # Building-a-Shared-High-Availability-Storage
 
-![](build-drbd.png)
+<div align="center">
+<img src="build-drbd.png" style="width: 500px;height:500px" alt="Building-a-Shared-High-Availability-Storage">
+</div>
+<br>
+<br>
 
 **Building a shared storage high availability (HA) cluster with two nodes based on DRBD with RDMA-based network**
 

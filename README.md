@@ -161,8 +161,8 @@ parm:           protocol_version_min:
 parm:           strict_names:restrict resource and connection names to ascii alnum and a subset of punct (drbd_strict_names)
 root@pve1:~#  
 ```
-Second node pve99:
-
+**Second node pve99:**  
+```
 [root@pve99 ~]$ cat /proc/drbd
 version: 9.2.12 (api:2/proto:118-122)
 GIT-hash: 2da6f528dc4ab3fd25c511f7b03531100e54ab08 build by root@pve99, 2024-12-17 23:30:23
@@ -195,14 +195,14 @@ parm:           protocol_version_min:
                 Supported: DRBD 8 [86-101]; DRBD 9 [118-122].
                 Default: 86 (drbd_protocol_version)
 parm:           strict_names:restrict resource and connection names to ascii alnum and a subset of punct (drbd_strict_names)
-[root@pve99 ~]$
-
-Let's add loading of modules to the file on both nodes:
-
-nano /etc/modules
-
-Example file:
-
+[root@pve99 ~]$  
+```
+**Let's add loading of modules to the file on both nodes:**  
+```
+nano /etc/modules  
+```
+**Example file:**  
+```
 # /etc/modules: kernel modules to load at boot time.
 #
 # This file contains the names of kernel modules that should be loaded
@@ -227,36 +227,38 @@ mlx4_ib
 drbd
 drbd_transport_rdma
 drbd_transport_lb-tcp
-drbd_transport_tcp
+drbd_transport_tcp  
+```
+## 1.3. Configuring DRBD devices.  
 
-1.3. Configuring DRBD devices.
+**There are two nodes. Each node has a disk: nvme0n1, by the way, when loading, the order can change: nvme0n1, nvme1n1… if there are several disks, so let's consider the case by label. When we pair disks, it is better to have them identical, identically labeled.**  
 
-There are two nodes. Each node has a disk: nvme0n1, by the way, when loading, the order can change: nvme0n1, nvme1n1… if there are several disks, so let's consider the case by label. When we pair disks, it is better to have them identical, identically labeled.
-1.3.1 Preparing disks
+### 1.3.1 Preparing disks
 
-Check the disk sector size. Set the same, change if necessary for maximum performance Node 1, pve1
-
+**Check the disk sector size. Set the same, change if necessary for maximum performance Node 1, pve1**  
+```
 root@pve1:~# nvme list
 Node Generic SN Model Namespace Usage Format FW Rev
 /dev/nvme1n1 /dev/ng1n1 S4EUNG0M328258D Samsung SSD 970 EVO Plus 250GB 1 214.99 GB / 250.06 GB 512 B + 0 B 1B2QEXM7
-/dev/nvme0n1 /dev/ng0n1 50026B7282A726A4 KINGSTON SKC3000S512G 1 512.11 GB / 512.11 GB 4 KiB + 0 B EIFK31.6
-
-Checking the block size
-
+/dev/nvme0n1 /dev/ng0n1 50026B7282A726A4 KINGSTON SKC3000S512G 1 512.11 GB / 512.11 GB 4 KiB + 0 B EIFK31.6  
+```
+**Checking the block size**  
+```
 root@pve1:~# nvme id-ns /dev/nvme0 -n 1 -H | grep &quot;LBA Format&quot;
 [6:5] : 0 Most significant 2 bits of Current LBA Format Selected
 [3:0] : 0x1 Least significant 4 bits of Current LBA Format Selected
 LBA Format 0 : Metadata Size: 0 bytes - Data Size: 512 bytes - Relative Performance: 0x2 Good
 LBA Format 1 : Metadata Size: 0 bytes - Data Size: 4096 bytes - Relative Performance: 0x1 Better (in use)
-root@pve1:~#
+root@pve1:~#  
+```
+**If necessary, change to 4k**  
+```
+root@pve1:~# nvme id-ns /dev/format --lbaf=1 /dev/nvme0n1  
+```
+**Similar to node 2, pve99**  
 
-If necessary, change to 4k
-
-root@pve1:~# nvme id-ns /dev/format --lbaf=1 /dev/nvme0n1
-
-Similar to node 2, pve99
-1.3.2. Using fdisk, we will first partition the first one as follows:
-
+### 1.3.2. Using fdisk, we will first partition the first one as follows:  
+```
 root@pve1:~# fdisk -l /dev/nvme0n1
 Disk /dev/nvme0n1: 476.94 GiB, 512110190592 bytes, 125026902 sectors
 Disk model: KINGSTON SKC3000S512G                   
@@ -275,14 +277,14 @@ Device             Start       End  Sectors  Size Type
 /dev/nvme0n1p6  63180800 105123839 41943040  160G Linux filesystem
 
 Partition table entries are not in disk order.
-root@pve1:~#
-
-Let's save the disk layout to a file:
-
-root@pve1:~# sfdisk -d /dev/nvme0n1 > nvmeKINGSTON512P6.dump
-
-It will look something like this:
-
+root@pve1:~#  
+```
+**Let's save the disk layout to a file:**  
+```
+root@pve1:~# sfdisk -d /dev/nvme0n1 > nvmeKINGSTON512P6.dump  
+```
+**It will look something like this:**  
+```
 root@pve1:~# cat nvmeKINGSTON512P6.dump
 label: gpt
 label-id: A1F37274-73E6-864F-B0B6-9BDD551BBD45
@@ -298,8 +300,8 @@ sector-size: 4096
 /dev/nvme0n1p4 : start=   121901056, size=     3125760, type=0657FD6D-A4AB-43C4-84E5-0933C84B4F4F, uuid=7F23E207-9E1A-1B42-962F-98BED3C1F479
 /dev/nvme0n1p5 : start=    21237760, size=    41943040, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=A00C2C46-01F3-1B48-9AB2-B458FDADC3D7
 /dev/nvme0n1p6 : start=    63180800, size=    41943040, type=0FC63DAF-8483-4772-8E79-3D69D8477DE4, uuid=207CEE45-7593-6441-9FAF-99E294452177
-root@pve1:~#
-
+root@pve1:~#  
+```
 Now, on another node, we will immediately save the layout to disk, and we will do the same when replacing a damaged disk:
 
 sfdisk /dev/nvme0n1 < nvmeKINGSTON512P6.dump
